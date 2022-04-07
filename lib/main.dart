@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hasuraflutter/model/user_model.dart';
+import 'package:hasuraflutter/pages/subscription_page.dart';
 import 'package:hasuraflutter/repository/hasura_repository.dart';
 
 void main() async {
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Hasura Flutter App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -35,16 +37,16 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   late Future<List<User>> _listaUsuario;
+  final HasuraRepository _hasuraRepository = HasuraRepository();
 
-  Future<List<User>> _obterUsuarios() async {
-    final HasuraRepository hasuraRepository = HasuraRepository();
-    return await hasuraRepository.obterUsuarios();
+  Future<List<User>> _getUsers() async {
+    return await _hasuraRepository.getUsersListQuery();
   }
 
   @override
   void initState() {
     super.initState();
-    _listaUsuario = _obterUsuarios();
+    _listaUsuario = _getUsers();
   }
 
   Column _listCommentsView(List<Comment> data) {
@@ -86,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Column _listaUserView(List<User> data) {
+  Column _listUserView(List<User> data) {
     List<Widget> children = [];
     for (final item in data) {
       children.add(const Divider(height: 3,));
@@ -118,6 +120,17 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          IconButton(
+              onPressed: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SubscriptionPage()),
+                );
+              },
+              icon: const Icon(Icons.radar)
+          )
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -131,9 +144,12 @@ class _MyHomePageState extends State<MyHomePage> {
               future: _listaUsuario,
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  return _listaUserView(snapshot.data!);
+                  return _listUserView(snapshot.data!);
                 } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}', style: TextStyle(color: Theme.of(context).errorColor),);
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text('${snapshot.error}', style: TextStyle(color: Theme.of(context).errorColor),),
+                  );
                 }
                 return const LinearProgressIndicator(minHeight: 1.5,);
               }
